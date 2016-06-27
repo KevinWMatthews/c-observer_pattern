@@ -2,7 +2,8 @@
 SILENCE = @
 
 ALL_TEST_MODULES = \
-				   DigitalWatch
+				   DigitalWatch \
+				   TimeSource
 
 
 
