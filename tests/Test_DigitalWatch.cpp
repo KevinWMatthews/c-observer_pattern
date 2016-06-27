@@ -10,15 +10,21 @@ extern "C"
 TEST_GROUP(DigitalWatch)
 {
     DigitalWatch watch;
+    int dummySystemTimeStruct;
+    SystemTime newTime;
 
     void setup()
     {
+        mock().strictOrder();
         watch = DigitalWatch_Create();
+        newTime = (SystemTime)(&dummySystemTimeStruct);
     }
 
     void teardown()
     {
         DigitalWatch_Destroy(watch);
+        mock().checkExpectations();
+        mock().clear();
     }
 };
 
@@ -60,4 +66,12 @@ TEST(DigitalWatch, StartWatch_can_handle_null_pointer)
 TEST(DigitalWatch, StopWatch_can_handle_null_pointer)
 {
     DigitalWatch_StopWatch(NULL);
+}
+
+TEST(DigitalWatch, UpdateDisplaySendsCommandToLcd)
+{
+    mock().expectOneCall("Lcd_UpdateDisplay")
+        .withParameter("time", newTime);
+
+    DigitalWatch_UpdateDisplay(watch, newTime);
 }

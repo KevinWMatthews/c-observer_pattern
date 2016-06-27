@@ -1,5 +1,6 @@
 #include "DigitalWatch.h"
 #include "WatchStopped.h"
+#include "Lcd.h"
 
 // This is currently implemented as a single-instance module.
 static DigitalWatchStruct watchStruct;
@@ -57,4 +58,9 @@ void DigitalWatch_StartWatch(DigitalWatch self)
         return;
     }
     self->state.startWatch(self);
+}
+
+void DigitalWatch_UpdateDisplay(DigitalWatch self, SystemTime new_time)
+{
+    Lcd_UpdateDisplay(new_time);
 }

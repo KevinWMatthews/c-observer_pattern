@@ -14,7 +14,7 @@ TEST_MODULE=observer_pattern
 SRC_DIRS = src
 INC_DIRS = inc
 TEST_DIRS = tests
-# MOCK_DIRS = mocks
+MOCK_DIRS = mocks
 BUILD_DIR = build
 OBJECT_DIR = obj
 
