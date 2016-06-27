@@ -10,14 +10,16 @@ TEST_GROUP(TimeSource)
 {
     void setup()
     {
+        TimeSource_Create();
     }
 
     void teardown()
     {
+        TimeSource_Destroy();
     }
 };
 
-TEST(TimeSource, it_can_fail)
+TEST(TimeSource, tick_notifies_an_observer)
 {
-    FAIL("Start here");
+    TimeSource_MillisecondTick();
 }
