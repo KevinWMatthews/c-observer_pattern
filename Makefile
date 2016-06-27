@@ -1,171 +1,76 @@
-# Set QUIET to @ to suppress folder creation and deletion
-# Set SILENCE to @ to suppress compier output
-# For the most complete silence, pass the -s option
-QUIET = @
+# Set to @ to keep this makefile quiet
 SILENCE = @
 
-
-
-#############################
-### Project configuration ###
-#############################
-TEST_MODULE=observer_pattern
-#ROOT_DIRECTORY=
-SRC_DIRS = src
-INC_DIRS = inc
-TEST_DIRS = tests
-MOCK_DIRS = mocks
-BUILD_DIR = build
-OBJECT_DIR = obj
+ALL_TEST_MODULES = \
+				   DigitalWatch
 
 
 
-######################
-### Compiler flags ###
-######################
-CFLAGS += -Wall
-ifeq ($(FATAL_COMPILER_ERRORS),Y)
-	CFLAGS += -Wfatal-errors
+##############################
+### Makefile configuration ###
+##############################
+# Set to 'Y' to cause a single compiler error to kill the make.
+FATAL_COMPILER_ERRORS = Y
+export FATAL_COMPILER_ERRORS
+
+# Set to 'Y' to suppress makefile errors when running unit tests.
+IGNORE_UNIT_TEST_ERRORS = N
+ifeq ($(IGNORE_UNIT_TEST_ERRORS),Y)
+	IGNORE_ERROR = -
+endif
+export IGNORE_ERROR
+
+# Set to 'Y' to suppress makefile messages when entering and leaving sub-makes.
+SUPPRESS_ENTERING_DIRECTORY_MESSAGE = Y
+ifeq ($(SUPPRESS_ENTERING_DIRECTORY_MESSAGE),Y)
+	NO_PRINT_DIRECTORY = --no-print-directory
 endif
 
-INCLUDE_FLAGS = $(addprefix -I, $(INC_DIRS))
-INCLUDE_FLAGS += $(addprefix -I, $(MOCK_DIRS))
+TEST_MAKEFILE = Makefile_CppUTest.make
+MAKE = make $(NO_PRINT_DIRECTORY) --file
+CLEAR = clear
+
 
 
 #############################
-### Product Configuration ###
+### Auto-generated values ###
 #############################
-TARGET_NAME = $(TEST_MODULE)
-CPPUTEST_HOME = /usr/local
-
-# CppUTest flags
-TEST_INCLUDE_FLAGS = $(addprefix -I, $(TEST_DIRS))
-CPPFLAGS += -I$(CPPUTEST_HOME)/include
-CXXFLAGS += -include $(CPPUTEST_HOME)/include/CppUTest/MemoryLeakDetectorNewMacros.h
-CFLAGS += -include $(CPPUTEST_HOME)/include/CppUTest/MemoryLeakDetectorMallocMacros.h
-LD_LIBRARIES = -L$(CPPUTEST_HOME)/lib -l CppUTest -lCppUTestExt
-
-#Flags for archive tool
-ifdef SILENCE
-	ARCHIVER_FLAGS=rcs
-else
-	ARCHIVER_FLAGS=rcvs
-endif
-
-C_COMPILER = gcc
-CPP_COMPILER = g++
-ARCHIVER = ar
-DEP_FLAGS = -MMD -MP
-MAKE_DIR = mkdir -p
-REMOVE = rm -rf
-
-
-
-#######################
-### Auto-generation ###
-#######################
-# Auto-generate list of source code
-SRC = $(call get_c_src_from_dir_list, $(SRC_DIRS))
-src_obj = $(call c_to_o, $(SRC))
-SRC_OBJ = $(addprefix $(OBJECT_DIR)/, $(src_obj))
-src_dep = $(call c_to_d, $(SRC))
-SRC_DEP = $(addprefix $(OBJECT_DIR)/, $(src_dep))
-
-# Auto-generate list of test code
-TEST = $(call get_cpp_src_from_dir_list, $(TEST_DIRS)) $(call get_c_src_from_dir_list, $(TEST_DIRS))
-# Convert .c extensions to .o, then convert .cpp extensions to .o
-test_obj = $(call cpp_to_o, $(call c_to_o, $(TEST)))
-TEST_OBJ = $(addprefix $(OBJECT_DIR)/, $(test_obj))
-test_dep = $(call cpp_to_d, $(TEST), $(call c_to_d, $(TEST)))
-TEST_DEP = $(addprefix $(OBJECT_DIR)/, $(test_dep))
-
-
-# Auto-generate list of mock code
-MOCK = $(call get_cpp_src_from_dir_list, $(MOCK_DIRS))
-mock_obj = $(call cpp_to_o, $(MOCK))
-MOCK_OBJ = $(addprefix $(OBJECT_DIR)/, $(mock_obj))
-mock_dep = $(call cpp_to_d, $(MOCK))
-MOCK_DEP = $(addprefix $(OBJECT_DIR)/, $(mock_dep))
-
-DEP_FILES = $(SRC_DEP) + $(TEST_DEP) + $(MOCK_DEP)
-
-TARGET = $(BUILD_DIR)/$(TARGET_NAME)
-# Production code is compiled into a library
-PRODUCTION_LIB = $(BUILD_DIR)/$(addsuffix .a,$(addprefix lib,$(TARGET_NAME)))
-
-
-
-########################
-### Helper functions ###
-########################
-get_c_src_from_dir_list = $(foreach dir, $1, $(call get_c_src_from_dir, $(dir)))
-get_c_src_from_dir = $(wildcard $1/*.c)
-c_to_o = $(call convert_extension,.c,.o,$1)
-c_to_d = $(call convert_extension,.c,.d,$1)
-
-get_cpp_src_from_dir_list = $(foreach dir, $1, $(call get_cpp_src_from_dir, $(dir)))
-get_cpp_src_from_dir = $(wildcard $1/*.cpp)
-cpp_to_o = $(call convert_extension,.cpp,.o,$1)
-cpp_to_d = $(call convert_extension,.cpp,.d,$1)
-
-# $1 is the initial extension
-# $2 is the final extension
-# $3 is the file in question
-convert_extension = $(patsubst %$1,%$2,$3)
-
-
-
-ifneq ("(MAKECMDGOALS)","clean")
--include $(DEP_FILES)
+# If user did not specify a module to test, test all of them.
+ifeq ($(strip $(TEST_MODULES)),)
+	TEST_MODULES = $(ALL_TEST_MODULES)
 endif
 
 
 
-###########
-# Targets #
-###########
-.PHONY: test tst clean full_clean clear
+###############
+### Targets ###
+###############
+# Generating the target for the submake in this fashion enables us to use the TEST_MODULES target.
+ifeq ($(MAKECMDGOALS),test)
+	SUBMAKE_TARGET = test
+endif
+ifeq ($(MAKECMDGOALS),clean)
+	SUBMAKE_TARGET = clean
+endif
+ifeq ($(MAKECMDGOALS),full_clean)
+	SUBMAKE_TARGET = full_clean
+endif
 
-test tst: clear $(TARGET)
-	@echo Executing unit tests for: $(TARGET)
-	$(IGNORE_ERROR)$(SILENCE)./$(TARGET) -c
+.PHONY: test clean full_clean $(TEST_MODULES) screen_clear
 
-# Be sure to link the test objects before the production library! This allows link-time substitution.
-$(TARGET): $(TEST_OBJ) $(MOCK_OBJ) $(PRODUCTION_LIB)
-	$(SILENCE)$(QUIET)$(MAKE_DIR) $(dir $@)
-	$(SILENCE)$(CPP_COMPILER) -o $@ $^ $(INCLUDE_FLAGS) $(CPPFLAGS) $(CXXFLAGS) $(LD_LIBRARIES)
+test: screen_clear $(TEST_MODULES)
+	@echo "Built and tested: $(TEST_MODULES)"
 
-$(PRODUCTION_LIB): $(SRC_OBJ)
-	$(SILENCE)$(QUIET)$(MAKE_DIR) $(dir $@)
-	$(SILENCE)$(ARCHIVER) $(ARCHIVER_FLAGS) $@ $^
+clean: $(TEST_MODULES)
+	@echo "Cleaned: $(TEST_MODULES)"
 
-# Compile test .cpp files
-$(OBJECT_DIR)/%.o: %.cpp
-	$(SILENCE)$(QUIET)$(MAKE_DIR) $(dir $@)
-	$(SILENCE)$(CPP_COMPILER) $(DEP_FLAGS) -o $@ -c $< $(CFLAGS) $(INCLUDE_FLAGS) $(TEST_INCLUDE_FLAGS)
+full_clean: $(TEST_MODULES)
+	@echo "Fully cleaned: $(TEST_MODULES)"
 
-# Compile source .c files
-$(OBJECT_DIR)/%.o: %.c
-	$(SILENCE)$(QUIET)$(MAKE_DIR) $(dir $@)
-	$(SILENCE)$(C_COMPILER) $(DEP_FLAGS) -o $@ -c $< $(CFLAGS) $(INCLUDE_FLAGS)
+$(TEST_MODULES):
+# Using $@ trims the whitespace
+	$(SILENCE)$(MAKE) $(TEST_MAKEFILE) $(SUBMAKE_TARGET) TEST_MODULE=$@
 
-filelist:
-	@echo $(TEST_OBJ)
-	@echo $(TEST_DEP)
-
-clean:
-	$(SILENCE)$(QUIET)$(REMOVE) $(TARGET)
-	$(SILENCE)$(QUIET)$(REMOVE) $(PRODUCTION_LIB)
-	$(SILENCE)$(QUIET)$(REMOVE) $(SRC_OBJ)
-	$(SILENCE)$(QUIET)$(REMOVE) $(SRC_DEP)
-	$(SILENCE)$(QUIET)$(REMOVE) $(TEST_OBJ)
-	$(SILENCE)$(QUIET)$(REMOVE) $(TEST_DEP)
-	$(SILENCE)$(QUIET)$(REMOVE) $(MOCK_OBJ)
-	$(SILENCE)$(QUIET)$(REMOVE) $(MOCK_DEP)
-
-full_clean:
-	$(SILENCE)$(QUIET)$(REMOVE) $(BUILD_DIR)
-	$(SILENCE)$(QUIET)$(REMOVE) $(OBJECT_DIR)
-
-clear:
-	@clear
+# clear the terminal screen
+screen_clear:
+	$(CLEAR)
