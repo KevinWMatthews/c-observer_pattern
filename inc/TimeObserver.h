@@ -1,8 +1,13 @@
 #ifndef TIME_OBSERVER_INCLUDED
 #define TIME_OBSERVER_INCLUDED
 
+#include "SystemTime.h"
+
 typedef struct TimeObserverStruct * TimeObserver;
 
-TimeObserver TimeObserver_Create(void);
+typedef void (*TimeChangedNotification)(TimeObserver, SystemTime);
+
+TimeObserver TimeObserver_Create(TimeChangedNotification);
+void TimeObserver_Destroy(TimeObserver);
 
 #endif
