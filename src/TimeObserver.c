@@ -1,22 +1,21 @@
 #include "TimeObserver.h"
+#include <stdlib.h>
 
 typedef struct TimeObserverStruct
 {
     TimeChangedNotification timeChangedNotification;
 } TimeObserverStruct;
 
-static TimeObserverStruct observerStruct;
-static TimeObserver observer;
-
 TimeObserver TimeObserver_Create(TimeChangedNotification notification)
 {
-    observer = &observerStruct;
-    observer->timeChangedNotification = notification;
-    return observer;
+    TimeObserver self = (TimeObserver)calloc( 1, sizeof(*self) );
+    self->timeChangedNotification = notification;
+    return self;
 }
 
 void TimeObserver_Destroy(TimeObserver self)
 {
+    free(self);
 }
 
 void TimeObserver_Notify(TimeObserver self, SystemTime system_time)

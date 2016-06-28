@@ -27,12 +27,15 @@ TEST_GROUP(TimeObserver)
     void setup()
     {
         observer = TimeObserver_Create(dummyNotification);
+        observer2 = TimeObserver_Create(dummyNotification2);
         is_observer_notified = 0;
+        is_observer2_notified = 0;
     }
 
     void teardown()
     {
         TimeObserver_Destroy(observer);
+        TimeObserver_Destroy(observer2);
     }
 };
 
@@ -45,6 +48,8 @@ TEST_GROUP(TimeObserver)
 
 TEST(TimeObserver, it_can_be_created_and_destroyed)
 {
+    CHECK_FALSE(is_observer_notified);
+    CHECK_FALSE(is_observer2_notified);
 }
 
 TEST(TimeObserver, notify_a_single_observer)
@@ -58,10 +63,20 @@ TEST(TimeObserver, notify_a_single_observer)
 
 TEST(TimeObserver, notify_a_second_observer)
 {
-    observer2 = TimeObserver_Create(dummyNotification2);
     SystemTime system_time = NULL;
 
     TimeObserver_Notify(observer2, system_time);
 
+    CHECK_TRUE(is_observer2_notified);
+}
+
+TEST(TimeObserver, notify_a_two_observers)
+{
+    SystemTime system_time = NULL;
+
+    TimeObserver_Notify(observer, system_time);
+    TimeObserver_Notify(observer2, system_time);
+
+    CHECK_TRUE(is_observer_notified);
     CHECK_TRUE(is_observer2_notified);
 }
