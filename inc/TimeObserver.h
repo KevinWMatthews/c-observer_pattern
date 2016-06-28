@@ -10,4 +10,6 @@ typedef void (*TimeChangedNotification)(TimeObserver, SystemTime);
 TimeObserver TimeObserver_Create(TimeChangedNotification);
 void TimeObserver_Destroy(TimeObserver);
 
+void TimeObserver_Notify(TimeObserver, SystemTime);
+
 #endif

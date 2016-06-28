@@ -6,8 +6,11 @@ extern "C"
 #include "Test_TimeObserver.h"
 #include "CppUTest/TestHarness.h"
 
+static bool is_observer_notified;
+
 void dummyNotification(TimeObserver observer, SystemTime system_time)
 {
+    is_observer_notified = 1;
 }
 
 TEST_GROUP(TimeObserver)
@@ -17,6 +20,7 @@ TEST_GROUP(TimeObserver)
     void setup()
     {
         observer = TimeObserver_Create(dummyNotification);
+        is_observer_notified = 0;
     }
 
     void teardown()
@@ -34,4 +38,13 @@ TEST_GROUP(TimeObserver)
 
 TEST(TimeObserver, it_can_be_created_and_destroyed)
 {
+}
+
+TEST(TimeObserver, notify_a_single_observer)
+{
+    SystemTime system_time = NULL;
+
+    TimeObserver_Notify(observer, system_time);
+
+    CHECK_TRUE(is_observer_notified);
 }
