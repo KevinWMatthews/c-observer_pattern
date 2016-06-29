@@ -6,10 +6,10 @@ extern "C"
 #include "Test_TimeSource.h"
 #include "CppUTest/TestHarness.h"
 
+static bool is_observer_notified;
+
 TEST_GROUP(TimeSource)
 {
-    bool is_observer_notified;
-
     void setup()
     {
         TimeSource_Create();
@@ -27,13 +27,24 @@ TEST_GROUP(TimeSource)
     }
 };
 
-IGNORE_TEST(TimeSource, tick_notifies_an_observer)
+static void dummyNotification(TimeObserver observer, SystemTime system_time)
 {
-    // TimeObserver observer = TimeObserver_Create();   //TODO add notification
+    is_observer_notified = 1;
+}
 
-    // TimeSource_RegisterMillisecondTickObserver(observer);   // We're only offering one tick right now.
+TEST(TimeSource, observers_not_notified_by_default)
+{
+    CHECK_FALSE(is_observer_notified);
+}
 
-    // TimeSource_MillisecondTick();                           // The HW or OS will call this from a timer.
+TEST(TimeSource, tick_notifies_an_observer)
+{
+    TimeObserver observer = TimeObserver_Create(dummyNotification);
+    TimeSource_RegisterMillisecondTickObserver(observer);   // We're only offering one tick right now.
 
-    // CHECK_TRUE(is_observer_notified);
+    TimeSource_MillisecondTick();                           // The HW or OS will call this from a timer.
+
+    CHECK_TRUE(is_observer_notified);
+
+    TimeObserver_Destroy(observer);
 }
