@@ -14,6 +14,10 @@ ifeq ($(FATAL_COMPILER_ERRORS),Y)
 	CFLAGS += -Wfatal-errors
 endif
 
+ifeq ($(DEBUG),Y)
+	CFLAGS += -g
+endif
+
 INCLUDE_FLAGS = $(addprefix -I, $(INC_DIRS))
 INCLUDE_FLAGS += $(addprefix -I, $(MOCK_DIRS))
 

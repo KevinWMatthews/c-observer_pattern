@@ -14,6 +14,10 @@ ALL_TEST_MODULES = \
 FATAL_COMPILER_ERRORS = Y
 export FATAL_COMPILER_ERRORS
 
+# Set to 'Y' to turn on debug capabilities
+DEBUG=Y
+export DEBUG
+
 # Set to 'Y' to suppress makefile errors when running unit tests.
 IGNORE_UNIT_TEST_ERRORS = N
 ifeq ($(IGNORE_UNIT_TEST_ERRORS),Y)
