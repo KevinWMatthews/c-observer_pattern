@@ -1,6 +1,6 @@
 #include "TimeSource.h"
 
-static TimeObserver observer_list[2];
+static TimeObserver observer_list[MAX_OBSERVERS];
 static unsigned char index_of_last_observer;
 
 void TimeSource_Create(void)
@@ -22,8 +22,13 @@ void TimeSource_MillisecondTick(void)
     }
 }
 
-void TimeSource_RegisterMillisecondTickObserver(TimeObserver observer)
+int TimeSource_RegisterMillisecondTickObserver(TimeObserver observer)
 {
+    if (index_of_last_observer >= MAX_OBSERVERS)
+    {
+        return TS_TOO_MANY_OBSERVERS;
+    }
     observer_list[index_of_last_observer] = observer;
     index_of_last_observer++;
+    return TS_SUCCESS;
 }

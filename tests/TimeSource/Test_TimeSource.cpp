@@ -40,6 +40,25 @@ TEST(TimeSource, observers_not_notified_by_default)
     CHECK_FALSE(is_observer2_notified);
 }
 
+TEST(TimeSource, can_register_an_observer)
+{
+    TimeObserver observer = TimeObserver_Create(dummyNotification);
+    LONGS_EQUAL( TS_SUCCESS, TimeSource_RegisterMillisecondTickObserver(observer) );
+    TimeObserver_Destroy(observer);
+}
+
+TEST(TimeSource, can_not_register_too_many_observers)
+{
+    TimeObserver observer = TimeObserver_Create(dummyNotification);
+    for (size_t i = 0; i < MAX_OBSERVERS; i++)
+    {
+        LONGS_EQUAL( TS_SUCCESS, TimeSource_RegisterMillisecondTickObserver(observer) );
+    }
+    LONGS_EQUAL( TS_TOO_MANY_OBSERVERS, TimeSource_RegisterMillisecondTickObserver(observer) );
+
+    TimeObserver_Destroy(observer);
+}
+
 TEST(TimeSource, tick_notifies_an_observer)
 {
     TimeObserver observer = TimeObserver_Create(dummyNotification);
