@@ -3,41 +3,53 @@ extern "C"
 #include "TimeSource.h"
 }
 
+#include "MockSystemTime.h"
 #include "Test_TimeSource.h"
 #include "CppUTest/TestHarness.h"
+#include "CppUTestExt/MockSupport.h"
 
-static bool is_observer_notified;
-static bool is_observer2_notified;
-
-static void dummyNotification(TimeObserver observer, SystemTime system_time)
+void MockObserver_Notify(TimeObserver observer, SystemTime system_time)
 {
-    is_observer_notified = 1;
-}
-
-static void dummyNotification2(TimeObserver observer, SystemTime system_time)
-{
-    is_observer2_notified = 1;
+    mock().actualCall("MockObserver_Notify")
+        .withParameter("observer", observer)
+        .withParameter("system_time", system_time);
 }
 
 TEST_GROUP(TimeSource)
 {
-    TimeObserver observer;
-    TimeObserver observer2;
+    TimeObserver mock_observer;
+    TimeObserver mock_observer2;
+    SystemTime system_time;
 
     void setup()
     {
-        observer = TimeObserver_Create(dummyNotification);
-        observer2 = TimeObserver_Create(dummyNotification2);
+        mock_observer = TimeObserver_Create(MockObserver_Notify);
+        mock_observer2 = TimeObserver_Create(MockObserver_Notify);
         TimeSource_Create();
-        is_observer_notified = 0;
-        is_observer2_notified = 0;
+        system_time = MockSystemTime_Create();
     }
 
     void teardown()
     {
-        TimeObserver_Destroy(observer);
-        TimeObserver_Destroy(observer2);
+        TimeObserver_Destroy(mock_observer);
+        TimeObserver_Destroy(mock_observer2);
         TimeSource_Destroy();
+        MockSystemTime_Destroy(system_time);
+        mock().checkExpectations();
+        mock().clear();
+    }
+
+    void expectGetSystemTime(SystemTime time)
+    {
+        mock().expectOneCall("SystemTime_GetTime")
+            .andReturnValue(time);
+    }
+
+    void expectObserverNotify(TimeObserver observer, SystemTime time)
+    {
+        mock().expectOneCall("MockObserver_Notify")
+            .withParameter("observer", observer)
+            .withParameter("system_time", time);
     }
 };
 
@@ -45,47 +57,43 @@ TEST_GROUP(TimeSource)
  *   Notify max observers.
  */
 
-TEST(TimeSource, observers_not_notified_by_default)
-{
-    CHECK_FALSE(is_observer_notified);
-    CHECK_FALSE(is_observer2_notified);
-}
-
 TEST(TimeSource, can_register_an_observer)
 {
-    LONGS_EQUAL( TS_SUCCESS, TimeSource_RegisterMillisecondTickObserver(observer) );
+    LONGS_EQUAL( TS_SUCCESS, TimeSource_RegisterMillisecondTickObserver(mock_observer) );
 }
 
 TEST(TimeSource, can_not_register_too_many_observers)
 {
     for (size_t i = 0; i < MAX_OBSERVERS; i++)
     {
-        LONGS_EQUAL( TS_SUCCESS, TimeSource_RegisterMillisecondTickObserver(observer) );
+        LONGS_EQUAL( TS_SUCCESS, TimeSource_RegisterMillisecondTickObserver(mock_observer) );
     }
-    LONGS_EQUAL( TS_TOO_MANY_OBSERVERS, TimeSource_RegisterMillisecondTickObserver(observer) );
+    LONGS_EQUAL( TS_TOO_MANY_OBSERVERS, TimeSource_RegisterMillisecondTickObserver(mock_observer) );
 }
 
 TEST(TimeSource, tick_can_notify_no_observers)
 {
+    expectGetSystemTime(system_time);
+
     TimeSource_MillisecondTick();
 }
 
 TEST(TimeSource, tick_notifies_an_observer)
 {
-    TimeSource_RegisterMillisecondTickObserver(observer);   // We're only offering one tick right now.
+    expectGetSystemTime(system_time);
+    expectObserverNotify(mock_observer, system_time);
+    TimeSource_RegisterMillisecondTickObserver(mock_observer);   // We're only offering one tick right now
 
     TimeSource_MillisecondTick();                           // The HW or OS will call this from a timer.
-
-    CHECK_TRUE(is_observer_notified);
 }
 
 TEST(TimeSource, tick_notifies_several_observers)
 {
-    TimeSource_RegisterMillisecondTickObserver(observer);
-    TimeSource_RegisterMillisecondTickObserver(observer2);
+    expectGetSystemTime(system_time);
+    expectObserverNotify(mock_observer, system_time);
+    expectObserverNotify(mock_observer2, system_time);
+    TimeSource_RegisterMillisecondTickObserver(mock_observer);
+    TimeSource_RegisterMillisecondTickObserver(mock_observer2);
 
     TimeSource_MillisecondTick();
-
-    CHECK_TRUE(is_observer_notified);
-    CHECK_TRUE(is_observer2_notified);
 }

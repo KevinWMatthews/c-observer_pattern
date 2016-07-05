@@ -14,7 +14,7 @@ void TimeSource_Destroy(void)
 
 void TimeSource_MillisecondTick(void)
 {
-    SystemTime system_time = NULL;
+    SystemTime system_time = SystemTime_GetTime();
     size_t i;
     for (i = 0; i < index_of_last_observer; i++)
     {

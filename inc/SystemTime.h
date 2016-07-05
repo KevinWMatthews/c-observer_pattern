@@ -3,4 +3,6 @@
 
 typedef struct SystemTimeStruct * SystemTime;
 
+SystemTime SystemTime_GetTime(void);
+
 #endif
