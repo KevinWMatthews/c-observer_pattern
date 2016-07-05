@@ -5,7 +5,7 @@
 SRC_DIRS = src
 INC_DIRS = inc
 TEST_DIRS = tests/$(TEST_MODULE)
-MOCK_DIRS = mocks
+MOCK_DIRS = mocks/$(TEST_MODULE)
 BUILD_DIR = build
 OBJECT_DIR = obj
 
