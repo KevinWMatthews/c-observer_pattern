@@ -41,6 +41,10 @@ TEST_GROUP(TimeSource)
     }
 };
 
+/* Test List:
+ *   Notify max observers.
+ */
+
 TEST(TimeSource, observers_not_notified_by_default)
 {
     CHECK_FALSE(is_observer_notified);
@@ -59,6 +63,11 @@ TEST(TimeSource, can_not_register_too_many_observers)
         LONGS_EQUAL( TS_SUCCESS, TimeSource_RegisterMillisecondTickObserver(observer) );
     }
     LONGS_EQUAL( TS_TOO_MANY_OBSERVERS, TimeSource_RegisterMillisecondTickObserver(observer) );
+}
+
+TEST(TimeSource, tick_can_notify_no_observers)
+{
+    TimeSource_MillisecondTick();
 }
 
 TEST(TimeSource, tick_notifies_an_observer)
